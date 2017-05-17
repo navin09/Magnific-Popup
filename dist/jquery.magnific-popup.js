@@ -1,6 +1,6 @@
-/*! Magnific Popup - v1.1.0 - 2016-02-20
+/*! Magnific Popup - v1.1.0 - 2017-05-17
 * http://dimsemenov.com/plugins/magnific-popup/
-* Copyright (c) 2016 Dmitry Semenov; */
+* Copyright (c) 2017 Dmitry Semenov; */
 ;(function (factory) { 
 if (typeof define === 'function' && define.amd) { 
  // AMD. Register as an anonymous module. 
@@ -28,6 +28,10 @@ if (typeof define === 'function' && define.amd) {
 var CLOSE_EVENT = 'Close',
 	BEFORE_CLOSE_EVENT = 'BeforeClose',
 	AFTER_CLOSE_EVENT = 'AfterClose',
+	BEFORE_MINIMIZE_EVENT = "BeforeMinimize",
+	AFTER_MINIMIZE_EVENT = "AfterMinimize",
+	BEFORE_MAXIMIZE_EVENT = "BeforeMaximize",
+	AFTER_MAXIMIZE_EVENT = "AfterMaximize",
 	BEFORE_APPEND_EVENT = 'BeforeAppend',
 	MARKUP_PARSE_EVENT = 'MarkupParse',
 	OPEN_EVENT = 'Open',
@@ -89,7 +93,11 @@ var _mfpOn = function(name, f) {
 	},
 	_getCloseBtn = function(type) {
 		if(type !== _currPopupType || !mfp.currTemplate.closeBtn) {
-			mfp.currTemplate.closeBtn = $( mfp.st.closeMarkup.replace('%title%', mfp.st.tClose ) );
+			if(mfp.st.minimizable) {
+				mfp.currTemplate.closeBtn = $( mfp.st.minimizeMarkup.replace('%title%', mfp.st.tMinimize ) );
+			} else {
+				mfp.currTemplate.closeBtn = $( mfp.st.closeMarkup.replace('%title%', mfp.st.tClose ) );
+			}
 			_currPopupType = type;
 		}
 		return mfp.currTemplate.closeBtn;
@@ -154,7 +162,6 @@ MagnificPopup.prototype = {
 	 * @param  data [description]
 	 */
 	open: function(data) {
-
 		var i;
 
 		if(data.isObj === false) { 
@@ -224,9 +231,18 @@ MagnificPopup.prototype = {
 				mfp.close();
 			});
 
+		  // Maximize
+		  _document.on('click', '.' + NS + '-maximize', function() {
+		  	mfp.maximize();
+		  });
+
 			mfp.wrap = _getEl('wrap').attr('tabindex', -1).on('click'+EVENT_NS, function(e) {
 				if(mfp._checkIfClose(e.target)) {
-					mfp.close();
+					if(mfp.st.minimizable) {
+						mfp.minimize();
+					} else {
+						mfp.close();	
+					}
 				}
 			});
 
@@ -234,6 +250,7 @@ MagnificPopup.prototype = {
 		}
 
 		mfp.contentContainer = _getEl('content');
+		
 		if(mfp.st.preloader) {
 			mfp.preloader = _getEl('preloader', mfp.container, mfp.st.tLoading);
 		}
@@ -375,10 +392,108 @@ MagnificPopup.prototype = {
 		}, 16);
 
 		mfp.isOpen = true;
+		mfp.isMaximized = true;
 		mfp.updateSize(windowHeight);
 		_mfpTrigger(OPEN_EVENT);
 
 		return data;
+	},
+
+	/**
+	 * Minimize the popup
+	 */
+	minimize: function() {
+		if(!mfp.isMaximized) return;
+		_mfpTrigger(BEFORE_MINIMIZE_EVENT);
+		mfp.isMaximized = false;
+		// for CSS3 animation
+		if(mfp.st.removalDelay && !mfp.isLowIE && mfp.supportsTransition )  {
+			mfp._addClassToMFP(REMOVING_CLASS);
+			setTimeout(function() {
+				mfp._minimize();
+			}, mfp.st.removalDelay);
+		} else {
+			mfp._minimize();
+		}
+	},
+
+
+	/**
+	 * Helper for minimize function
+	 */
+	_minimize: function() {
+		/** Core of the minimize function works by creating a temporary container
+		 *  for the contents of the popup, situating it in the exact position that
+		 *  the popup is situated in currently, then animating it towards the
+		 *  bottom-left corner of the screen, and consequently closing the popup
+		 **/
+
+		if($(NS + '-temp-content-container').length) {
+			mfp.temporaryContents = $(NS + '-temp-contents-container').appendTo('body');
+		} else {
+			mfp.temporaryContents = $('<div />', {
+				'class': NS + '-temp-content-container'
+			}).appendTo('body');
+		}
+
+		var originalCSS = {
+			'right': window.innerWidth  - (mfp.contentContainer[0].offsetLeft + mfp.contentContainer[0].clientWidth),
+			'bottom': window.innerHeight - (mfp.contentContainer[0].offsetTop + mfp.contentContainer[0].clientHeight),
+			'height': mfp.contentContainer.height(),
+			'width': mfp.contentContainer.width()
+		};
+		
+		mfp.temporaryContents.data('originalCSS',originalCSS).css(originalCSS);
+
+		mfp.temporaryContents.html(mfp.contentContainer.append().contents().clone());
+
+		var maximizeBtn = $('<div>', {'class': NS + '-maximize', 'style': 'font-size: ' + mfp.temporaryContents.height() + 'px'}).html('&plus;');
+
+		mfp.temporaryContents.append(maximizeBtn)
+								.animate({
+									right: 10,
+									bottom: 10,
+									width: 40,
+									height: 40
+								}, {'duration': 500, 'queue': false})
+								.addClass(NS + '-minimized');
+
+		maximizeBtn.animate({fontSize: '40px'}, {'duration': 500, 'queue': false});
+		
+		_mfpTrigger(AFTER_MINIMIZE_EVENT);
+		mfp.close();
+	},
+
+	/**
+	 * Maximizes the popup
+	 */
+	maximize: function() {
+		if(mfp.isMaximized) return;
+		_mfpTrigger(BEFORE_MAXIMIZE_EVENT);
+		mfp._maximize();
+	},
+
+	/**
+	 * Helper for maximize() function
+	 */
+	_maximize: function() {
+		if(mfp.temporaryContents) {
+			var originalCSS = mfp.temporaryContents.data('originalCSS');
+			mfp.temporaryContents.find('.' + NS + '-maximize').remove()
+													.animate(originalCSS).removeClass(NS + '-minimized');
+			var items = {
+				items: {
+					src: mfp.temporaryContents.html(),
+					type: 'inline'
+				},
+				minimizable: mfp.st.minimizable
+			}
+			mfp.open(items);
+			mfp.temporaryContents.remove();
+			delete(mfp.temporaryContents);
+			mfp.isMaximized = true;
+		}
+		_mfpTrigger(AFTER_MAXIMIZE_EVENT);
 	},
 
 	/**
@@ -712,7 +827,7 @@ MagnificPopup.prototype = {
 	// "target" is an element that was clicked
 	_checkIfClose: function(target) {
 
-		if($(target).hasClass(PREVENT_CLOSE_CLASS)) {
+		if($(target).closest('.' + PREVENT_CLOSE_CLASS).length) {
 			return;
 		}
 
@@ -724,7 +839,7 @@ MagnificPopup.prototype = {
 		} else {
 
 			// We close the popup if click is on close button or on preloader. Or if there is no content.
-			if(!mfp.content || $(target).hasClass('mfp-close') || (mfp.preloader && target === mfp.preloader[0]) ) {
+			if(!mfp.content || $(target).closest('.' + NS + '-close').length || $(target).closest('.' + NS + '-minimize').length || (mfp.preloader && target === mfp.preloader[0]) ) {
 				return true;
 			}
 
@@ -895,11 +1010,19 @@ $.magnificPopup = {
 
 		closeMarkup: '<button title="%title%" type="button" class="mfp-close">&#215;</button>',
 
+		minimizeMarkup: '<button title="%title%" type="button" class="mfp-minimize">&#95;</button>',
+
 		tClose: 'Close (Esc)',
 
 		tLoading: 'Loading...',
 
-		autoFocusLast: true
+		tMinimize: 'Minimize',
+
+		tMaximize: 'Maximize',
+
+		autoFocusLast: true,
+
+		minimizable: false
 
 	}
 };
