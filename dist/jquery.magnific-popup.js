@@ -1,4 +1,4 @@
-/*! Magnific Popup - v1.1.0 - 2017-05-17
+/*! Magnific Popup - v1.1.0 - 2017-05-19
 * http://dimsemenov.com/plugins/magnific-popup/
 * Copyright (c) 2017 Dmitry Semenov; */
 ;(function (factory) { 
@@ -445,6 +445,8 @@ MagnificPopup.prototype = {
 		
 		mfp.temporaryContents.data('originalCSS',originalCSS).css(originalCSS);
 
+		// remove minimize btn
+		mfp.contentContainer.find('.' + NS + '-minimize').remove();
 		mfp.temporaryContents.html(mfp.contentContainer.append().contents().clone());
 
 		var maximizeBtn = $('<div>', {'class': NS + '-maximize', 'style': 'font-size: ' + mfp.temporaryContents.height() + 'px'}).html('&plus;');
@@ -1010,7 +1012,7 @@ $.magnificPopup = {
 
 		closeMarkup: '<button title="%title%" type="button" class="mfp-close">&#215;</button>',
 
-		minimizeMarkup: '<button title="%title%" type="button" class="mfp-minimize">&#95;</button>',
+		minimizeMarkup: '<button title="%title%" type="button" class="mfp-minimize">&#8212;</button>',
 
 		tClose: 'Close (Esc)',
 

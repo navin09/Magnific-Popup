@@ -428,9 +428,14 @@ MagnificPopup.prototype = {
 		
 		mfp.temporaryContents.data('originalCSS',originalCSS).css(originalCSS);
 
+		// remove minimize btn
+		mfp.contentContainer.find('.' + NS + '-minimize').remove();
 		mfp.temporaryContents.html(mfp.contentContainer.append().contents().clone());
 
 		var maximizeBtn = $('<div>', {'class': NS + '-maximize', 'style': 'font-size: ' + mfp.temporaryContents.height() + 'px'}).html('&plus;');
+
+		
+
 
 		mfp.temporaryContents.append(maximizeBtn)
 								.animate({
@@ -993,7 +998,7 @@ $.magnificPopup = {
 
 		closeMarkup: '<button title="%title%" type="button" class="mfp-close">&#215;</button>',
 
-		minimizeMarkup: '<button title="%title%" type="button" class="mfp-minimize">&#95;</button>',
+		minimizeMarkup: '<button title="%title%" type="button" class="mfp-minimize">&#8212;</button>',
 
 		tClose: 'Close (Esc)',
 
