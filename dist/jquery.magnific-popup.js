@@ -1,4 +1,4 @@
-/*! Magnific Popup - v1.1.0 - 2017-05-19
+/*! Magnific Popup - v1.1.0 - 2017-05-24
 * http://dimsemenov.com/plugins/magnific-popup/
 * Copyright (c) 2017 Dmitry Semenov; */
 ;(function (factory) { 
@@ -483,14 +483,7 @@ MagnificPopup.prototype = {
 			var originalCSS = mfp.temporaryContents.data('originalCSS');
 			mfp.temporaryContents.find('.' + NS + '-maximize').remove()
 													.animate(originalCSS).removeClass(NS + '-minimized');
-			var items = {
-				items: {
-					src: mfp.temporaryContents.html(),
-					type: 'inline'
-				},
-				minimizable: mfp.st.minimizable
-			}
-			mfp.open(items);
+			mfp.open(mfp.st);
 			mfp.temporaryContents.remove();
 			delete(mfp.temporaryContents);
 			mfp.isMaximized = true;

@@ -434,9 +434,6 @@ MagnificPopup.prototype = {
 
 		var maximizeBtn = $('<div>', {'class': NS + '-maximize', 'style': 'font-size: ' + mfp.temporaryContents.height() + 'px'}).html('&plus;');
 
-		
-
-
 		mfp.temporaryContents.append(maximizeBtn)
 								.animate({
 									right: 10,
@@ -469,14 +466,7 @@ MagnificPopup.prototype = {
 			var originalCSS = mfp.temporaryContents.data('originalCSS');
 			mfp.temporaryContents.find('.' + NS + '-maximize').remove()
 													.animate(originalCSS).removeClass(NS + '-minimized');
-			var items = {
-				items: {
-					src: mfp.temporaryContents.html(),
-					type: 'inline'
-				},
-				minimizable: mfp.st.minimizable
-			}
-			mfp.open(items);
+			mfp.open(mfp.st);
 			mfp.temporaryContents.remove();
 			delete(mfp.temporaryContents);
 			mfp.isMaximized = true;
@@ -931,7 +921,6 @@ $.magnificPopup = {
 
 	open: function(options, index) {
 		_checkInstance();
-
 		if(!options) {
 			options = {};
 		} else {
